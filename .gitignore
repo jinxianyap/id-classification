@@ -1,4 +1,5 @@
 /classes
 /models
-/output
+/csv_output
+/metrics_output
 /weights

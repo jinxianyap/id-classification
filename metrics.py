@@ -5,8 +5,12 @@ import pandas as pd
 import numpy as np
 import json
 import csv
+import sys
 import operator
 import matplotlib.image as mpimg
+
+output_folder = './metrics_output/'
+models_present = ['basic','resnet','resnet_he_uniform','mobilenet']
 
 def load_model_metrics(sheet_name):
   model = {
@@ -17,7 +21,7 @@ def load_model_metrics(sheet_name):
   classes = []
   i = 2
 
-  with open('./output/%s.csv' % sheet_name) as f:
+  with open('./csv_output/%s.csv' % sheet_name) as f:
     reader = csv.reader(f, delimiter=',')
     first = 0
     for row in reader:
@@ -37,7 +41,7 @@ def load_model_metrics(sheet_name):
         model[qry] = ls
   return model, classes
 
-def display_error_samples(samples):
+def display_error_samples(model_name, is_test, samples):
   imgs = list(map(lambda x: mpimg.imread('./classes/' + x['image_path']), samples))
   fig = plt.figure(figsize=(15,15))
   cols = 3
@@ -47,9 +51,11 @@ def display_error_samples(samples):
     axes.append(fig.add_subplot(rows, cols, i + 1))
     axes[-1].set_title("Ground Truth: %s\nPrediction: %s" % (samples[i]['ground_truth'], samples[i]['prediction']))
     plt.imshow(imgs[i])
+    plt.axis('off')
 
   fig.tight_layout()    
-  plt.show()
+  # plt.show()
+  plt.savefig("%s%s_%s_errorsamples.png" % (output_folder, model_name, 'testing' if is_test else 'training'))
 
 def display_model_conf_matrix(model, classes, is_test):
   qry = 'test_imgs' if is_test else 'train_imgs'
@@ -74,7 +80,7 @@ def display_model_conf_matrix(model, classes, is_test):
   accuracy = "{:.2f}%".format(acc)
   precisions = []
   f1 = []
-  # 2TP / (2TP + FP + FN) 
+
   for i in range(len(cats)):
     prec = "{:.2f}%".format(cats[i][i] / sum(cats[j][i] for j in range(len(cats))) * 100)
     f = "{:.2f}%".format((2 * cats[i][i]) / (sum(cats[j][i] for j in range(len(cats))) + sum(cats[i][j] for j in range(len(cats)))) * 100)
@@ -95,8 +101,8 @@ def display_model_conf_matrix(model, classes, is_test):
   # ytable = plt.table(cellText=[precisions, f1], rowLabels=['Precision', 'F1 Score'], colLabels=classes, loc="bottom", position=(0, 10))
   # plt.axis("off")
   # plt.grid(False)
-  plt.show()
-
+  # plt.show()
+  plt.savefig("%s%s_%s_confmatrix.png" % (output_folder, model['name'], 'testing' if is_test else 'training'))
 
   return acc, samples
 
@@ -136,19 +142,26 @@ def display_all_models(model_names, accs):
   sizefactor = 1.5
   plt.gcf().set_size_inches(fig_size * sizefactor) 
 
-  plt.show()
+  # plt.show()
+  plt.savefig("%sgeneral_acc_compare.png" % output_folder)
 
 def display_model_result(name):
   model_results, classes = load_model_metrics(name)
   test_acc, test_samples = display_model_conf_matrix(model_results, classes, True)
-  display_error_samples(test_samples)
+  display_error_samples(name, True, test_samples)
   train_acc, train_samples = display_model_conf_matrix(model_results, classes, False)
-  display_error_samples(train_samples)
+  display_error_samples(name, False, train_samples)
 
   return test_acc, train_acc
 
 
-# models = ['basic', 'resnet', 'resnet_he_uniform', 'mobilenet']
-models =['basic']
-accs = list(map(display_model_result, models))
-display_all_models(models, accs)
+if len(sys.argv) < 2:
+  print('Please indicate at least 1 model')
+else:
+  models = sys.argv[1:]
+  filtered = [each for each in models if not each in models_present]
+  if len(filtered) > 0:
+    print('The following models were not found')
+  else:
+    accs = list(map(display_model_result, models))
+    display_all_models(models, accs)

@@ -191,7 +191,7 @@ def save_model(model, name):
   print("Saved model to disk")
 
 def write_to_output(model, name, classes, testX, testY, test_paths, trainX, trainY, train_paths):
-  with open('./output/%s.csv' % name, mode='w') as f:
+  with open('./csv_output/%s.csv' % name, mode='w') as f:
     writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(csv_headers)
     
