@@ -1,4 +1,4 @@
-Automated training pipeline built to for performance evaluation and comparison of several multi-class classification CNN models.
+Automated training pipeline built for performance evaluation and comparison of several multi-class classification CNN models.
 
 # id-classification
 `models.py`: compiles and trains selected model, saves model and weights, saves testing and training set prediction results.  
